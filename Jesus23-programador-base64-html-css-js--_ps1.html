@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Codificador e Descodificador Base64 - Sistemas Espirituais</title>
+    <style>
+        /* Estética Hacker Espiritual */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #05020a;
+            color: #39ff14;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 850px;
+            background: rgba(10, 5, 20, 0.9);
+            border: 2px solid #bd00ff;
+            box-shadow: 0 0 25px #bd00ff;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+            font-size: 1.6rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .section-divider {
+            border-top: 2px dashed #bd00ff;
+            margin: 30px 0;
+            padding-top: 20px;
+        }
+
+        .label {
+            color: #ff007f;
+            margin-bottom: 8px;
+            display: block;
+            font-weight: bold;
+        }
+
+        /* Inputs e Textareas */
+        textarea {
+            width: 100%;
+            height: 150px;
+            background: #0d0614;
+            border: 1px solid #39ff14;
+            color: #fff;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            resize: vertical;
+            margin-bottom: 20px;
+            box-shadow: inset 0 0 5px rgba(57, 255, 20, 0.2);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #00ffff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        .output-box {
+            width: 100%;
+            background: #12021c;
+            border: 1px dashed #ff007f;
+            color: #ffb7d5;
+            height: 120px;
+            overflow-y: auto;
+            word-break: break-all;
+            padding: 12px;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+        }
+
+        /* Caixa de código corrido para HTML puro */
+        .html-output {
+            color: #00ffff;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Botões Neo-Cyber */
+        .btn {
+            background: transparent;
+            color: #39ff14;
+            border: 1px solid #39ff14;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 8px rgba(57, 255, 20, 0.3);
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            background: #39ff14;
+            color: #05020a;
+            box-shadow: 0 0 15px #39ff14;
+        }
+
+        .status-msg {
+            color: #00ffff;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>// TRANSCONVERSOR_ALMA_BINÁRIA_v1.2</h1>
+        
+        <!-- SECÇÃO 1: CODIFICAR -->
+        <label class="label">> [MÓDULO_01]: Inserir Poesia ou Texto Sagrado (Suporta \${} para contas):</label>
+        <textarea id="userInput" placeholder="Escreva o seu texto aqui..."></textarea>
+
+        <label class="label">> Resultado Base64 Gerado (HTML Criptografado):</label>
+        <div id="base64Output" class="output-box">A aguardar dados do utilizador...</div>
+
+        <button class="btn" onclick="copyToClipboard('base64Output', 'statusEncoder')">COPIAR BASE64</button>
+        <div id="statusEncoder" class="status-msg"></div>
+
+        <!-- SECÇÃO 2: DESCODIFICAR -->
+        <div class="section-divider"></div>
+        
+        <label class="label">> [MÓDULO_02]: Inserir Código Base64 para Descodificar:</label>
+        <textarea id="base64Input" placeholder="Cole a hash Base64 aqui para invocar o espírito do código original..."></textarea>
+
+        <label class="label">> Código HTML / JS / CSS Direto Extraído:</label>
+        <div id="htmlOutput" class="output-box html-output">A aguardar hash cifrada...</div>
+
+        <button class="btn" onclick="copyToClipboard('htmlOutput', 'statusDecoder')">COPIAR HTML DIRECTO</button>
+        <div id="statusDecoder" class="status-msg"></div>
+    </div>
+
+    <script>
+        // Elementos da Secção 1 (Codificador)
+        const userInput = document.getElementById('userInput');
+        const base64Output = document.getElementById('base64Output');
+
+        // Elementos da Secção 2 (Descodificador)
+        const base64Input = document.getElementById('base64Input');
+        const htmlOutput = document.getElementById('htmlOutput');
+
+        // === CONFIGURAÇÃO DO TEU EXEMPLO FIXO ===
+        const exemploFixo = "O resultado da conta sagrada inserida é: ${23*45/2}";
+        userInput.value = exemploFixo;
+
+        // Função que processa e resolve as equações matemáticas antes de converter
+        function processarEConvertor() {
+            let text = userInput.value;
+            
+            if (!text.trim()) {
+                base64Output.innerText = "A aguardar dados do utilizador...";
+                return;
+            }
+
+            // Motor de resolução matemática global via Eval dinâmico
+            text = text.replace(/\${([\s\S]+?)}/g, (match, expression) => {
+                try {
+                    // Executa de forma direta e limpa operações como 23*45/2
+                    return eval(expression);
+                } catch (e) {
+                    return `[Erro de Execução JS: ${expression}]`;
+                }
+            });
+
+            const htmlTemplate = `<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Espírito Codificado</title>
+    <style>
+        body { 
+            background: #06020f; 
+            color: #00ffff; 
+            font-family: monospace; 
+            padding: 40px; 
+            text-align: center;
+            text-shadow: 0 0 8px #00ffff;
+        }
+        .content { 
+            border: 1px solid #ff007f; 
+            padding: 30px; 
+            display: inline-block; 
+            background: rgba(0,0,0,0.5);
+            box-shadow: 0 0 20px #ff007f;
+            max-width: 600px;
+            white-space: pre-wrap;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="content">${escapeHtml(text)}</div>
+</body>
+</html>`;
+
+            try {
+                const base64Result = btoa(unescape(encodeURIComponent(htmlTemplate)));
+                base64Output.innerText = base64Result;
+            } catch (err) {
+                base64Output.innerText = "// ERRO_NA_COMPILAÇÃO_ESPIRITUAL: " + err.message;
+            }
+        }
+
+        // Eventos para escuta em tempo real e carregamento automático do exemplo
+        userInput.addEventListener('input', processarEConvertor);
+        window.addEventListener('DOMContentLoaded', processarEConvertor);
+
+        // === LÓGICA DO DESCODIFICADOR ===
+        base64Input.addEventListener('input', () => {
+            const base64String = base64Input.value.trim();
+
+            if (!base64String) {
+                htmlOutput.innerText = "A aguardar hash cifrada...";
+                return;
+            }
+
+            try {
+                const decodedHtml = decodeURIComponent(escape(atob(base64String)));
+                htmlOutput.innerText = decodedHtml;
+            } catch (err) {
+                htmlOutput.innerText = "// ERRO_DE_SINTAXE: Estrutura Base64 corrompida ou inválida.";
+            }
+        });
+
+        // Funções Auxiliares
+        function escapeHtml(string) {
+            return string.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function copyToClipboard(elementId, statusId) {
+            const targetElement = document.getElementById(elementId);
+            const statusElement = document.getElementById(statusId);
+            const textToCopy = targetElement.innerText;
+
+            if (textToCopy === "A aguardar dados do utilizador..." || 
+                textToCopy === "A aguardar hash cifrada..." || 
+                textToCopy.startsWith("//")) {
+                statusElement.style.color = "#ff007f";
+                statusElement.innerText = "[AVISO]: Nenhum código válido detetado para cópia.";
+                return;
+            }
+
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                statusElement.style.color = "#00ffff";
+                statusElement.innerText = "[SUCESSO]: Dados copiados para a área de transferência.";
+                setTimeout(() => { statusElement.innerText = ""; }, 3000);
+            }).catch(err => {
+                statusElement.style.color = "#ff007f";
+                statusElement.innerText = "[ERRO]: Falha crítica ao aceder à memória de cópia.";
+            });
+        }
+    </script>
+</body>
+</html>
