@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Storage JSON Persistente</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 30px; background: #fafafa; color: #333; }
+        .container { max-width: 600px; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h2 { margin-top: 0; color: #007bff; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 5px; }
+        button:hover { background: #0056b3; }
+        .btn-request { background: #28a745; }
+        .btn-request:hover { background: #218838; }
+        .btn-export { background: #6c757d; }
+        .btn-export:hover { background: #5a6268; }
+        .btn-delete { background: #dc3545; font-size: 12px; padding: 5px 10px; }
+        .btn-delete:hover { background: #bd2130; }
+        .storage-box { display: none; background: #e9ecef; padding: 15px; border-radius: 4px; margin-top: 20px; }
+        ul { list-style: none; padding: 0; }
+        li { background: white; padding: 12px; margin: 8px 0; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .btn-select { background: #17a2b8; font-size: 12px; padding: 5px 10px; }
+        .btn-select:hover { background: #138496; }
+        .active-item { background: #fff3cd; border: 2px solid #ffc107; padding: 15px; border-radius: 4px; margin-top: 20px; }
+        .status-badge { font-size: 12px; padding: 4px 8px; border-radius: 12px; font-weight: bold; display: inline-block; margin-bottom: 10px; }
+        .status-ok { background: #d4edda; color: #155724; }
+        .actions-group { display: flex; gap: 5px; }
+        .search-box { background: #fff; border: 2px solid #007bff; }
+    </style>
+</head>
+<body>
+
+    <!-- Bloco de Status da Memória -->
+    <div class="container">
+        <h2>Status do Super Storage</h2>
+        <div id="statusPersistencia" class="status-badge">Verificando persistência...</div>
+        <p style="font-size: 12px; margin: 0; color: #666;" id="infoEspaco">Calculando espaço disponível...</p>
+    </div>
+
+    <!-- Bloco 1: Inserir dados -->
+    <div class="container">
+        <h2>1. Inserir Dados no JSON Gigante</h2>
+        <input type="text" id="nomeItem" placeholder="Nome do item (ex: Arquivo de Configuração)">
+        <input type="text" id="valorItem" placeholder="Conteúdo JSON ou descrição (sem limite de tamanho)">
+        <button onclick="salvarNoIndexedDB()">Salvar na Memória Própria</button>
+    </div>
+
+    <!-- Bloco 2: Botão de Requisição, Exportação e Busca -->
+    <div class="container">
+        <h2>2. Requisição do Banco de Dados</h2>
+        <p>Gere e manipule as suas informações guardadas localmente:</p>
+        <button class="btn-request" onclick="abrirIndexedDB()">Abrir Storage JSON</button>
+        <button class="btn-export" onclick="exportarParaJSON()">Exportar Ficheiro .json</button>
+
+        <div id="caixaStorage" class="storage-box">
+            <!-- Barra de Pesquisa Integrada -->
+            <input type="text" id="barraBusca" class="search-box" placeholder="🔍 Digite para pesquisar itens em tempo real..." oninput="filtrarItens()">
+            <h3>Itens Encontrados no Banco:</h3>
+            <ul id="listaItensStorage"></ul>
+        </div>
+    </div>
+
+    <!-- Bloco 3: Item Selecionado -->
+    <div id="painelAtivo" class="container" style="display: none;">
+        <h2>3. Item Selecionado Atualmente</h2>
+        <div class="active-item">
+            <p><strong>Nome:</strong> <span id="viewNome"></span></p>
+            <p><strong>Conteúdo Recorrente:</strong></p>
+            <pre id="viewValor" style="background: #fff; padding: 10px; border-radius: 4px; overflow-x: auto; max-height: 200px;"></pre>
+        </div>
+    </div>
+   <script>
+        const DB_NAME = 'MeuSuperBancoJSON';
+        const STORE_NAME = 'json_store';
+        let db;
+        let todosOsItens = []; // Cache local para fazer a pesquisa ultra rápida
+
+        function inicializarBanco() {
+            const request = indexedDB.open(DB_NAME, 1);
+            request.onupgradeneeded = function(e) {
+                let database = e.target.result;
+                if (!database.objectStoreNames.contains(STORE_NAME)) {
+                    database.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                }
+            };
+            request.onsuccess = function(e) {
+                db = e.target.result;
+                solicitarPersistenciaMax();
+                atualizarEstimativaEspaco();
+            };
+            request.onerror = function() {
+                console.error("Erro ao abrir banco de alta capacidade.");
+            };
+        }
+
+        async function solicitarPersistenciaMax() {
+            const statusDiv = document.getElementById('statusPersistencia');
+            if (navigator.storage && navigator.storage.persist) {
+                const isPersisted = await navigator.storage.persist();
+                if (isPersisted) {
+                    statusDiv.textContent = "✓ MEMÓRIA PERSISTENTE COMPATÍVEL (Protegida contra limpezas)";
+                    statusDiv.className = "status-badge status-ok";
+                } else {
+                    statusDiv.textContent = "⚠ Armazenamento comum (Sujeito a regras do sistema)";
+                    statusDiv.style.background = "#fff3cd";
+                }
+            }
+        }
+
+        async function atualizarEstimativaEspaco() {
+            if (navigator.storage && navigator.storage.estimate) {
+                const estimativa = await navigator.storage.estimate();
+                const totalDisponivelGB = (estimativa.quota / (1024 * 1024 * 1024)).toFixed(2);
+                const usadoMB = (estimativa.usage / (1024 * 1024)).toFixed(2);
+                document.getElementById('infoEspaco').textContent = `Espaço total alocado para você: ~${totalDisponivelGB} GB (Usado: ${usadoMB} MB)`;
+            }
+        }
+
+        function salvarNoIndexedDB() {
+            const nome = document.getElementById('nomeItem').value;
+            const valor = document.getElementById('valorItem').value;
+
+            if (!nome || !valor) {
+                alert('Preencha os campos!');
+                return;
+            }
+
+            const transacao = db.transaction([STORE_NAME], 'readwrite');
+            const store = transacao.objectStore(STORE_NAME);
+
+            const novoItem = {
+                nome: nome,
+                valor: valor,
+                dataCriacao: new Date().toISOString()
+            };
+
+            store.add(novoItem);
+
+            transacao.oncomplete = function() {
+                document.getElementById('nomeItem').value = '';
+                document.getElementById('valorItem').value = '';
+                alert('Item gravado com sucesso!');
+                atualizarEstimativaEspaco();
+                if (document.getElementById('caixaStorage').style.display === 'block') abrirIndexedDB();
+            };
+        }
+
+        // Abre a caixa de armazenamento e carrega os itens
+        function abrirIndexedDB() {
+            const caixa = document.getElementById('caixaStorage');
+            document.getElementById('barraBusca').value = ''; // Limpa a barra ao reabrir
+
+            const transacao = db.transaction([STORE_NAME], 'readonly');
+            const store = transacao.objectStore(STORE_NAME);
+            const request = store.getAll();
+
+            request.onsuccess = function() {
+                todosOsItens = request.result; // Guarda na cache global
+                renderizarLista(todosOsItens);
+                caixa.style.display = 'block';
+            };
+        }
+
+        // Função responsável por desenhar a lista no HTML
+        function renderizarLista(itens) {
+            const lista = document.getElementById('listaItensStorage');
+            lista.innerHTML = '';
+
+            if (itens.length === 0) {
+                lista.innerHTML = '<li>Nenhum dado correspondente encontrado.</li>';
+                return;
+            }
+
+            itens.forEach(item => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span><strong>${item.nome}</strong></span>
+                    <div class="actions-group">
+                        <button class="btn-select" onclick="usarItem(${item.id})">Usar Este</button>
+                        <button class="btn-delete" onclick="apagarItem(${item.id})">Apagar</button>
+                    </div>
+                `;
+                lista.appendChild(li);
+            });
+        }
+
+        // Pesquisa em tempo real
+        function filtrarItens() {
+            const termoBusca = document.getElementById('barraBusca').value.toLowerCase();
+            
+            // Filtra os itens pelo nome ou pelo conteúdo guardado
+            const itensFiltrados = todosOsItens.filter(item => 
+                item.nome.toLowerCase().includes(termoBusca) || 
+                item.valor.toLowerCase().includes(termoBusca)
+            );
+            
+            renderizarLista(itensFiltrados);
+        }
+
+        // Faz download de todo o banco em formato .json real
+        function exportarParaJSON() {
+            const transacao = db.transaction([STORE_NAME], 'readonly');
+            const store = transacao.objectStore(STORE_NAME);
+            const request = store.getAll();
+
+            request.onsuccess = function() {
+                const dados = request.result;
+                if (dados.length === 0) {
+                    alert('O banco está vazio! Não há nada para exportar.');
+                    return;
+                }
+
+                // Transforma o array de objetos numa string estruturada JSON
+                const jsonString = JSON.stringify(dados, null, 2);
+                
+                // Cria um arquivo temporário na memória do navegador
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                // Cria um link invisível para disparar o download
+                const linkDownload = document.createElement('a');
+                linkDownload.href = url;
+                linkDownload.download = `backup_storage_${Date.now()}.json`;
+                
+                document.body.appendChild(linkDownload);
+                linkDownload.click(); // Clica automaticamente
+                
+                // Limpa a memória do link temporário
+                document.body.removeChild(linkDownload);
+                URL.revokeObjectURL(url);
+            };
+        }
+
+        function apagarItem(idParaApagar) {
+            if (!confirm("Tem a certeza que deseja apagar este item permanentemente?")) return;
+
+            const transacao = db.transaction([STORE_NAME], 'readwrite');
+            const store = transacao.objectStore(STORE_NAME);
+            const request = store.delete(idParaApagar);
+
+            request.onsuccess = function() {
+                document.getElementById('painelAtivo').style.display = 'none';
+                abrirIndexedDB();
+                atualizarEstimativaEspaco();
+            };
+        }
+
+        function usarItem(idProcurado) {
+            const transacao = db.transaction([STORE_NAME], 'readonly');
+            const store = transacao.objectStore(STORE_NAME);
+            const request = store.get(idProcurado);
+
+            request.onsuccess = function() {
+                const item = request.result;
+                if (item) {
+                    document.getElementById('viewNome').textContent = item.nome;
+                    document.getElementById('viewValor').textContent = item.valor;
+                    document.getElementById('painelAtivo').style.display = 'block';
+                    document.getElementById('painelAtivo').scrollIntoView({ behavior: 'smooth' });
+                }
+            };
+        }
+
+        window.onload = inicializarBanco;
+    </script>
+</body>
+</html>
