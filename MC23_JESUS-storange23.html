@@ -1,0 +1,2039 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Painel JSON Persistente - Corporativo & Escolar</title>
+
+    <!-- =====================================================
+         SHEETJS
+         ===================================================== -->
+    <script src="https://cloudflare.com"></script>
+
+    <style>
+
+        /* =====================================================
+           TELA VERMELHA
+           ===================================================== */
+
+        #telaSeguranca {
+            position: fixed;
+            inset: 0;
+
+            z-index: 5000;
+
+            background: #b40000;
+
+            /*
+             * A camada vermelha NÃO bloqueia o programa.
+             */
+            pointer-events: none;
+
+            --mouse-x: 50vw;
+            --mouse-y: 50vh;
+
+            -webkit-mask-image:
+                radial-gradient(
+                    circle 180px at var(--mouse-x) var(--mouse-y),
+                    transparent 0px,
+                    transparent 95px,
+                    rgba(0,0,0,.35) 125px,
+                    #000 180px
+                );
+
+            mask-image:
+                radial-gradient(
+                    circle 180px at var(--mouse-x) var(--mouse-y),
+                    transparent 0px,
+                    transparent 95px,
+                    rgba(0,0,0,.35) 125px,
+                    #000 180px
+                );
+
+            transition:
+                opacity .5s ease,
+                visibility .5s ease;
+        }
+
+
+        /* =====================================================
+           CAIXA DA SEGUNDA PALAVRA-PASSE
+           ===================================================== */
+
+        #segundaSenhaBox {
+            position: fixed;
+
+            left: var(--mouse-x);
+            top: var(--mouse-y);
+
+            transform: translate(-50%, -50%);
+
+            width: 310px;
+
+            padding: 20px;
+
+            box-sizing: border-box;
+
+            background: rgba(20,20,20,.98);
+
+            border: 2px solid #ffffff;
+
+            border-radius: 12px;
+
+            color: #ffffff;
+
+            text-align: center;
+
+            /*
+             * A caixa recebe cliques.
+             */
+            pointer-events: auto;
+
+            z-index: 5001;
+
+            box-shadow:
+                0 0 15px rgba(255,255,255,.35),
+                0 0 45px rgba(255,0,0,.7);
+
+            font-family:
+                'Segoe UI',
+                Tahoma,
+                Geneva,
+                Verdana,
+                sans-serif;
+
+            transition:
+                left .08s linear,
+                top .08s linear;
+        }
+
+
+        .segundaSenhaTitulo {
+            font-size: 17px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+
+        .segundaSenhaTexto {
+            font-size: 12px;
+            color: #ffcccc;
+            margin-bottom: 10px;
+        }
+
+
+        #segundaSenhaBox input {
+            width: 100%;
+
+            box-sizing: border-box;
+
+            padding: 11px;
+
+            margin: 5px 0 10px;
+
+            background: #ffffff;
+
+            color: #222222;
+
+            border: 2px solid #dc3545;
+
+            border-radius: 5px;
+
+            outline: none;
+
+            font-size: 14px;
+        }
+
+
+        #segundaSenhaBox input:focus {
+            border-color: #ffffff;
+
+            box-shadow:
+                0 0 10px rgba(255,255,255,.8);
+        }
+
+
+        #segundaSenhaBox button {
+            width: 100%;
+
+            margin: 0;
+
+            padding: 10px;
+
+            background: #dc3545;
+
+            color: #ffffff;
+
+            border: none;
+
+            border-radius: 5px;
+
+            cursor: pointer;
+
+            font-weight: bold;
+        }
+
+
+        #segundaSenhaBox button:hover {
+            background: #a71d2a;
+        }
+
+
+        #msgLiberacao {
+            min-height: 18px;
+
+            margin-top: 8px;
+
+            font-size: 12px;
+
+            font-weight: bold;
+        }
+
+
+        /* =====================================================
+           AVISO DA TELA VERMELHA
+           ===================================================== */
+
+        #avisoSeguranca {
+            position: fixed;
+
+            z-index: 5002;
+
+            top: 18px;
+
+            left: 50%;
+
+            transform: translateX(-50%);
+
+            color: #ffffff;
+
+            font-size: 15px;
+
+            font-weight: bold;
+
+            text-align: center;
+
+            pointer-events: none;
+
+            text-shadow:
+                0 2px 5px rgba(0,0,0,.8);
+
+            transition:
+                opacity .4s ease;
+        }
+
+
+        /* =====================================================
+           TELA DESBLOQUEADA
+           ===================================================== */
+
+        #telaSeguranca.desativada {
+            opacity: 0;
+
+            visibility: hidden;
+
+            pointer-events: none;
+        }
+
+
+        #telaSeguranca.desativada #segundaSenhaBox {
+            pointer-events: none;
+        }
+
+
+        /* =====================================================
+           ESTILO ORIGINAL
+           ===================================================== */
+
+        body {
+            font-family:
+                'Segoe UI',
+                Tahoma,
+                Geneva,
+                Verdana,
+                sans-serif;
+
+            margin: 30px;
+
+            background: #fafafa;
+
+            color: #333;
+        }
+
+
+        .container {
+            max-width: 650px;
+
+            background: white;
+
+            padding: 25px;
+
+            border-radius: 8px;
+
+            box-shadow:
+                0 4px 10px rgba(0,0,0,0.1);
+
+            margin-bottom: 20px;
+        }
+
+
+        h2 {
+            margin-top: 0;
+
+            color: #007bff;
+        }
+
+
+        input,
+        select {
+            width: 100%;
+
+            padding: 10px;
+
+            margin: 10px 0;
+
+            border: 1px solid #ccc;
+
+            border-radius: 4px;
+
+            box-sizing: border-box;
+        }
+
+
+        button {
+            background: #007bff;
+
+            color: white;
+
+            border: none;
+
+            padding: 10px 15px;
+
+            border-radius: 4px;
+
+            cursor: pointer;
+
+            font-weight: bold;
+
+            margin-right: 5px;
+        }
+
+
+        button:hover {
+            background: #0056b3;
+        }
+
+
+        .btn-request {
+            background: #28a745;
+        }
+
+
+        .btn-request:hover {
+            background: #218838;
+        }
+
+
+        .btn-export {
+            background: #6c757d;
+        }
+
+
+        .btn-export:hover {
+            background: #5a6268;
+        }
+
+
+        .btn-delete {
+            background: #dc3545;
+
+            font-size: 12px;
+
+            padding: 5px 10px;
+        }
+
+
+        .btn-delete:hover {
+            background: #bd2130;
+        }
+
+
+        .storage-box {
+            display: none;
+
+            background: #e9ecef;
+
+            padding: 15px;
+
+            border-radius: 4px;
+
+            margin-top: 20px;
+        }
+
+
+        ul {
+            list-style: none;
+
+            padding: 0;
+        }
+
+
+        li {
+            background: white;
+
+            padding: 12px;
+
+            margin: 8px 0;
+
+            border-radius: 4px;
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            box-shadow:
+                0 1px 3px rgba(0,0,0,0.1);
+        }
+
+
+        .btn-select {
+            background: #17a2b8;
+
+            font-size: 12px;
+
+            padding: 5px 10px;
+        }
+
+
+        .btn-select:hover {
+            background: #138496;
+        }
+
+
+        .active-item {
+            background: #fff3cd;
+
+            border: 2px solid #ffc107;
+
+            padding: 15px;
+
+            border-radius: 4px;
+
+            margin-top: 20px;
+        }
+
+
+        .status-badge {
+            font-size: 12px;
+
+            padding: 4px 8px;
+
+            border-radius: 12px;
+
+            font-weight: bold;
+
+            display: inline-block;
+
+            margin-bottom: 10px;
+        }
+
+
+        .status-ok {
+            background: #d4edda;
+
+            color: #155724;
+        }
+
+
+        .actions-group {
+            display: flex;
+
+            gap: 5px;
+        }
+
+
+        .search-box {
+            background: #fff;
+
+            border: 2px solid #007bff;
+        }
+
+
+        .admin-lock {
+            border-left: 5px solid #dc3545;
+        }
+
+
+        .login-box {
+            background: #fff3cd;
+
+            border: 1px solid #ffeeba;
+
+            padding: 15px;
+
+            border-radius: 6px;
+
+            margin-bottom: 20px;
+        }
+
+
+        .file-input-wrapper {
+            background: #f8f9fa;
+
+            border: 2px dashed #007bff;
+
+            padding: 15px;
+
+            text-align: center;
+
+            border-radius: 6px;
+
+            margin-top: 10px;
+        }
+
+    </style>
+</head>
+
+
+<body>
+
+
+    <!-- =====================================================
+         TELA VERMELHA + SEGUNDA AUTENTICAÇÃO
+         ===================================================== -->
+
+    <div id="telaSeguranca">
+
+        <div id="segundaSenhaBox">
+
+            <div class="segundaSenhaTitulo">
+                🔐 AUTENTICAÇÃO FINAL
+            </div>
+
+            <div class="segundaSenhaTexto">
+                Introduza a palavra-passe para libertar o sistema
+            </div>
+
+            <input
+                type="password"
+                id="senhaLiberacao"
+                placeholder="Digite a palavra-passe..."
+                autocomplete="off"
+            >
+
+            <button
+                type="button"
+                onclick="libertarTela()"
+            >
+                LIBERTAR SISTEMA
+            </button>
+
+            <div id="msgLiberacao"></div>
+
+        </div>
+
+    </div>
+
+
+    <div id="avisoSeguranca">
+        🔐 Mova o rato para encontrar a autenticação final
+    </div>
+
+
+    <!-- =====================================================
+         STATUS
+         ===================================================== -->
+
+    <div class="container">
+
+        <h2>
+            Status do Super Storage
+        </h2>
+
+        <div
+            id="statusPersistencia"
+            class="status-badge"
+        >
+            Verificando persistência...
+        </div>
+
+        <p
+            style="font-size: 12px; margin: 0; color: #666;"
+            id="infoEspaco"
+        >
+            Calculando espaço disponível...
+        </p>
+
+    </div>
+
+
+    <!-- =====================================================
+         PRIMEIRO LOGIN
+         ===================================================== -->
+
+    <div
+        class="container login-box"
+        id="blocoLogin"
+    >
+
+        <h3>
+            🔒 Área Administrativa Protegida
+        </h3>
+
+        <p
+            style="
+                font-size: 13px;
+                margin: 0 0 10px 0;
+            "
+        >
+            Insira a senha para desbloquear as funções
+            de escrita, importação e eliminação de dados:
+        </p>
+
+
+        <div
+            style="
+                display: flex;
+                gap: 10px;
+            "
+        >
+
+            <input
+                type="password"
+                id="senhaAdmin"
+                placeholder="Digite a palavra-passe administrativo..."
+                style="margin: 0;"
+            >
+
+            <button onclick="verificarSenha()">
+                Autenticar
+            </button>
+
+        </div>
+
+
+        <p
+            id="msgLogin"
+            style="
+                font-size: 12px;
+                font-weight: bold;
+                margin: 5px 0 0 0;
+                color: #dc3545;
+                display: none;
+            "
+        >
+            Palavra-passe incorreta!
+        </p>
+
+    </div>
+
+
+    <!-- =====================================================
+         BLOCO 1
+         ===================================================== -->
+
+    <div
+        class="container admin-lock"
+        id="blocoInsercao"
+        style="
+            opacity: 0.5;
+            pointer-events: none;
+        "
+    >
+
+        <h2>
+            1. Inserir Dados Manuais (Bloqueado)
+        </h2>
+
+        <input
+            type="text"
+            id="nomeItem"
+            placeholder="Nome do item (ex: Turma 10ºA / Inventário TI)"
+        >
+
+        <input
+            type="text"
+            id="valorItem"
+            placeholder="Conteúdo estruturado ou descrição"
+        >
+
+        <button onclick="salvarNoIndexedDB()">
+            Salvar na Memória Própria
+        </button>
+
+    </div>
+
+
+    <!-- =====================================================
+         BLOCO 2
+         ===================================================== -->
+
+    <div
+        class="container admin-lock"
+        id="blocoImportacao"
+        style="
+            opacity: 0.5;
+            pointer-events: none;
+        "
+    >
+
+        <h2>
+            2. Importar Tabelas Locais (Bloqueado)
+        </h2>
+
+        <p style="font-size: 13px; margin: 0;">
+
+            Carregue ficheiros do Excel
+            (<strong>.xlsx, .xls</strong>)
+            ou ficheiros <strong>.csv</strong>.
+
+            O sistema vai extrair a primeira coluna como
+            'Nome' e a segunda coluna como o 'Conteúdo'.
+
+        </p>
+
+
+        <div class="file-input-wrapper">
+
+            <input
+                type="file"
+                id="arquivoUpload"
+                accept=".xlsx, .xls, .csv"
+                style="margin: 0;"
+            >
+
+            <button
+                class="btn-request"
+                onclick="processarFicheiro()"
+                style="margin-top: 10px;"
+            >
+                Processar e Injetar no Banco
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         BLOCO 3
+         ===================================================== -->
+
+    <div class="container">
+
+        <h2>
+            3. Consulta e Requisição Geral
+        </h2>
+
+        <p>
+            Disponível para qualquer utilizador da rede local
+            pesquisar e carregar dados:
+        </p>
+
+
+        <button
+            class="btn-request"
+            onclick="abrirIndexedDB()"
+        >
+            Abrir Storage JSON
+        </button>
+
+
+        <button
+            class="btn-export"
+            onclick="exportarParaJSON()"
+        >
+            Exportar Cópia .json
+        </button>
+
+
+        <div
+            id="caixaStorage"
+            class="storage-box"
+        >
+
+            <input
+                type="text"
+                id="barraBusca"
+                class="search-box"
+                placeholder="🔍 Digite para filtrar nomes ou dados em tempo real..."
+                oninput="filtrarItens()"
+            >
+
+            <h3>
+                Itens e Registos Disponíveis:
+            </h3>
+
+            <ul id="listaItensStorage"></ul>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         BLOCO 4
+         ===================================================== -->
+
+    <div
+        id="painelAtivo"
+        class="container"
+        style="display: none;"
+    >
+
+        <h2>
+            4. Registo Ativo no Sistema
+        </h2>
+
+        <div class="active-item">
+
+            <p>
+                <strong>Identificação/Nome:</strong>
+                <span id="viewNome"></span>
+            </p>
+
+            <p>
+                <strong>Informação / Configuração Base:</strong>
+            </p>
+
+            <pre
+                id="viewValor"
+                style="
+                    background: #fff;
+                    padding: 10px;
+                    border-radius: 4px;
+                    overflow-x: auto;
+                    max-height: 250px;
+                    white-space: pre-wrap;
+                "
+            ></pre>
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        /* =====================================================
+           CONFIGURAÇÃO
+           ===================================================== */
+
+        const DB_NAME =
+            'MeuSuperBancoJSON';
+
+        const STORE_NAME =
+            'json_store';
+
+        const SENHA =
+            'jesus23';
+
+        let db;
+
+        let todosOsItens = [];
+
+        let isAdmin = false;
+
+
+        /* =====================================================
+           ELEMENTOS DA SEGURANÇA
+           ===================================================== */
+
+        const telaSeguranca =
+            document.getElementById(
+                'telaSeguranca'
+            );
+
+        const segundaSenhaBox =
+            document.getElementById(
+                'segundaSenhaBox'
+            );
+
+        const senhaLiberacao =
+            document.getElementById(
+                'senhaLiberacao'
+            );
+
+        const avisoSeguranca =
+            document.getElementById(
+                'avisoSeguranca'
+            );
+
+
+        /* =====================================================
+           MOVIMENTO DO RATO
+           ===================================================== */
+
+        document.addEventListener(
+            'mousemove',
+            function(evento) {
+
+                if (
+                    telaSeguranca.classList.contains(
+                        'desativada'
+                    )
+                ) {
+                    return;
+                }
+
+
+                const x =
+                    evento.clientX;
+
+                const y =
+                    evento.clientY;
+
+
+                telaSeguranca.style.setProperty(
+                    '--mouse-x',
+                    x + 'px'
+                );
+
+                telaSeguranca.style.setProperty(
+                    '--mouse-y',
+                    y + 'px'
+                );
+
+            }
+        );
+
+
+        /* =====================================================
+           POSIÇÃO INICIAL
+           ===================================================== */
+
+        function posicionarLanternaNoCentro() {
+
+            telaSeguranca.style.setProperty(
+                '--mouse-x',
+                (window.innerWidth / 2) + 'px'
+            );
+
+            telaSeguranca.style.setProperty(
+                '--mouse-y',
+                (window.innerHeight / 2) + 'px'
+            );
+
+        }
+
+
+        /* =====================================================
+           PRIMEIRA AUTENTICAÇÃO
+           ===================================================== */
+
+        function verificarSenha() {
+
+            const campo =
+                document.getElementById(
+                    'senhaAdmin'
+                );
+
+            const mensagem =
+                document.getElementById(
+                    'msgLogin'
+                );
+
+
+            if (campo.value === SENHA) {
+
+                isAdmin = true;
+
+
+                mensagem.style.color =
+                    '#155724';
+
+                mensagem.textContent =
+                    '✓ Acesso administrativo concedido!';
+
+                mensagem.style.display =
+                    'block';
+
+
+                /*
+                 * Desbloquear inserção.
+                 */
+
+                const insercao =
+                    document.getElementById(
+                        'blocoInsercao'
+                    );
+
+                insercao.style.opacity =
+                    '1';
+
+                insercao.style.pointerEvents =
+                    'auto';
+
+
+                /*
+                 * Desbloquear importação.
+                 */
+
+                const importacao =
+                    document.getElementById(
+                        'blocoImportacao'
+                    );
+
+                importacao.style.opacity =
+                    '1';
+
+                importacao.style.pointerEvents =
+                    'auto';
+
+
+                /*
+                 * Não removemos a tela vermelha.
+                 *
+                 * A segunda senha ainda é necessária.
+                 */
+
+
+            } else {
+
+                isAdmin = false;
+
+
+                mensagem.textContent =
+                    'Palavra-passe incorreta!';
+
+                mensagem.style.color =
+                    '#dc3545';
+
+                mensagem.style.display =
+                    'block';
+
+            }
+
+        }
+
+
+        /* =====================================================
+           SEGUNDA AUTENTICAÇÃO
+           ===================================================== */
+
+        function libertarTela() {
+
+            const mensagem =
+                document.getElementById(
+                    'msgLiberacao'
+                );
+
+
+            if (senhaLiberacao.value === SENHA) {
+
+                mensagem.style.color =
+                    '#7CFF7C';
+
+                mensagem.textContent =
+                    '✓ Autenticação final aceite!';
+
+
+                setTimeout(
+                    function() {
+
+                        telaSeguranca.classList.add(
+                            'desativada'
+                        );
+
+                        avisoSeguranca.style.opacity =
+                            '0';
+
+                    },
+                    350
+                );
+
+
+            } else {
+
+                mensagem.style.color =
+                    '#ffffff';
+
+                mensagem.textContent =
+                    '✕ Palavra-passe incorreta!';
+
+
+                senhaLiberacao.value = '';
+
+                senhaLiberacao.focus();
+
+
+                segundaSenhaBox.animate(
+                    [
+                        {
+                            transform:
+                                'translate(-50%, -50%) translateX(0)'
+                        },
+                        {
+                            transform:
+                                'translate(-50%, -50%) translateX(-10px)'
+                        },
+                        {
+                            transform:
+                                'translate(-50%, -50%) translateX(10px)'
+                        },
+                        {
+                            transform:
+                                'translate(-50%, -50%) translateX(-10px)'
+                        },
+                        {
+                            transform:
+                                'translate(-50%, -50%) translateX(0)'
+                        }
+                    ],
+                    {
+                        duration: 300
+                    }
+                );
+
+            }
+
+        }
+
+
+        /* =====================================================
+           ENTER NA SEGUNDA SENHA
+           ===================================================== */
+
+        senhaLiberacao.addEventListener(
+            'keydown',
+            function(evento) {
+
+                if (
+                    evento.key === 'Enter'
+                ) {
+
+                    evento.preventDefault();
+
+                    libertarTela();
+
+                }
+
+            }
+        );
+
+
+        /* =====================================================
+           ENTER NA PRIMEIRA SENHA
+           ===================================================== */
+
+        document.getElementById(
+            'senhaAdmin'
+        ).addEventListener(
+            'keydown',
+            function(evento) {
+
+                if (
+                    evento.key === 'Enter'
+                ) {
+
+                    evento.preventDefault();
+
+                    verificarSenha();
+
+                }
+
+            }
+        );
+
+
+        /* =====================================================
+           INDEXEDDB
+           ===================================================== */
+
+        function inicializarBanco() {
+
+            const request =
+                indexedDB.open(
+                    DB_NAME,
+                    1
+                );
+
+
+            request.onupgradeneeded =
+                function(e) {
+
+                    let database =
+                        e.target.result;
+
+
+                    if (
+                        !database.objectStoreNames.contains(
+                            STORE_NAME
+                        )
+                    ) {
+
+                        database.createObjectStore(
+                            STORE_NAME,
+                            {
+                                keyPath: 'id',
+                                autoIncrement: true
+                            }
+                        );
+
+                    }
+
+                };
+
+
+            request.onsuccess =
+                function(e) {
+
+                    db =
+                        e.target.result;
+
+
+                    solicitarPersistenciaMax();
+
+                    atualizarEstimativaEspaco();
+
+                };
+
+
+            request.onerror =
+                function() {
+
+                    console.error(
+                        "Erro ao abrir banco de alta capacidade."
+                    );
+
+                };
+
+        }
+
+
+        /* =====================================================
+           PROCESSAR FICHEIRO
+           ===================================================== */
+
+        function processarFicheiro() {
+
+            if (!isAdmin) {
+
+                alert(
+                    'Ação protegida. Autentique-se primeiro.'
+                );
+
+                return;
+            }
+
+
+            const inputFicheiro =
+                document.getElementById(
+                    'arquivoUpload'
+                );
+
+
+            if (
+                inputFicheiro.files.length === 0
+            ) {
+
+                alert(
+                    'Por favor, selecione um ficheiro Excel ou CSV primeiro!'
+                );
+
+                return;
+            }
+
+
+            const ficheiro =
+                inputFicheiro.files[0];
+
+
+            const leitor =
+                new FileReader();
+
+
+            leitor.onload =
+                function(e) {
+
+                    try {
+
+                        const dadosBinarios =
+                            e.target.result;
+
+
+                        const livro =
+                            XLSX.read(
+                                dadosBinarios,
+                                {
+                                    type: 'binary'
+                                }
+                            );
+
+
+                        const nomePrimeiraFolha =
+                            livro.SheetNames[0];
+
+
+                        const folha =
+                            livro.Sheets[
+                                nomePrimeiraFolha
+                            ];
+
+
+                        const dadosMatriz =
+                            XLSX.utils.sheet_to_json(
+                                folha,
+                                {
+                                    header: 1
+                                }
+                            );
+
+
+                        if (
+                            dadosMatriz.length === 0
+                        ) {
+
+                            alert(
+                                'O ficheiro selecionado parece estar vazio.'
+                            );
+
+                            return;
+                        }
+
+
+                        const transacao =
+                            db.transaction(
+                                [STORE_NAME],
+                                'readwrite'
+                            );
+
+
+                        const store =
+                            transacao.objectStore(
+                                STORE_NAME
+                            );
+
+
+                        let itensContabilizados =
+                            0;
+
+
+                        dadosMatriz.forEach(
+                            function(linha) {
+
+                                const nome =
+                                    linha[0];
+
+                                const valor =
+                                    linha[1];
+
+
+                                if (
+                                    nome &&
+                                    valor
+                                ) {
+
+                                    const novoItem = {
+
+                                        nome:
+                                            String(nome).trim(),
+
+                                        valor:
+                                            String(valor).trim(),
+
+                                        dataCriacao:
+                                            new Date().toISOString()
+
+                                    };
+
+
+                                    store.add(
+                                        novoItem
+                                    );
+
+
+                                    itensContabilizados++;
+
+                                }
+
+                            }
+                        );
+
+
+                        transacao.oncomplete =
+                            function() {
+
+                                alert(
+                                    `Sucesso! Foram importados ${itensContabilizados} registos diretamente para a memória local.`
+                                );
+
+
+                                inputFicheiro.value =
+                                    '';
+
+
+                                atualizarEstimativaEspaco();
+
+
+                                if (
+                                    document.getElementById(
+                                        'caixaStorage'
+                                    ).style.display ===
+                                    'block'
+                                ) {
+
+                                    abrirIndexedDB();
+
+                                }
+
+                            };
+
+
+                    } catch (erro) {
+
+                        console.error(
+                            erro
+                        );
+
+                        alert(
+                            'Erro ao processar o ficheiro. Certifique-se de que é um formato válido.'
+                        );
+
+                    }
+
+                };
+
+
+            leitor.readAsBinaryString(
+                ficheiro
+            );
+
+        }
+
+
+        /* =====================================================
+           PERSISTÊNCIA
+           ===================================================== */
+
+        async function solicitarPersistenciaMax() {
+
+            const statusDiv =
+                document.getElementById(
+                    'statusPersistencia'
+                );
+
+
+            if (
+                navigator.storage &&
+                navigator.storage.persist
+            ) {
+
+                const isPersisted =
+                    await navigator.storage.persist();
+
+
+                if (isPersisted) {
+
+                    statusDiv.textContent =
+                        "✓ MEMÓRIA PERSISTENTE COMPATÍVEL (Protegida contra limpezas)";
+
+                    statusDiv.className =
+                        "status-badge status-ok";
+
+                } else {
+
+                    statusDiv.textContent =
+                        "⚠ Armazenamento comum (Sujeito a regras do sistema)";
+
+                    statusDiv.style.background =
+                        "#fff3cd";
+
+                }
+
+            }
+
+        }
+
+
+        /* =====================================================
+           ESPAÇO
+           ===================================================== */
+
+        async function atualizarEstimativaEspaco() {
+
+            if (
+                navigator.storage &&
+                navigator.storage.estimate
+            ) {
+
+                const estimativa =
+                    await navigator.storage.estimate();
+
+
+                const totalDisponivelGB =
+                    (
+                        estimativa.quota /
+                        (1024 * 1024 * 1024)
+                    ).toFixed(2);
+
+
+                const usadoMB =
+                    (
+                        estimativa.usage /
+                        (1024 * 1024)
+                    ).toFixed(2);
+
+
+                document.getElementById(
+                    'infoEspaco'
+                ).textContent =
+                    `Espaço total alocado para você: ~${totalDisponivelGB} GB (Usado: ${usadoMB} MB)`;
+
+            }
+
+        }
+
+
+        /* =====================================================
+           GUARDAR ITEM
+           ===================================================== */
+
+        function salvarNoIndexedDB() {
+
+            if (!isAdmin) return;
+
+
+            const nome =
+                document.getElementById(
+                    'nomeItem'
+                ).value;
+
+
+            const valor =
+                document.getElementById(
+                    'valorItem'
+                ).value;
+
+
+            if (
+                !nome ||
+                !valor
+            ) {
+
+                alert(
+                    'Preencha os campos!'
+                );
+
+                return;
+            }
+
+
+            const transacao =
+                db.transaction(
+                    [STORE_NAME],
+                    'readwrite'
+                );
+
+
+            const store =
+                transacao.objectStore(
+                    STORE_NAME
+                );
+
+
+            const novoItem = {
+
+                nome:
+                    nome,
+
+                valor:
+                    valor,
+
+                dataCriacao:
+                    new Date().toISOString()
+
+            };
+
+
+            store.add(
+                novoItem
+            );
+
+
+            transacao.oncomplete =
+                function() {
+
+                    document.getElementById(
+                        'nomeItem'
+                    ).value = '';
+
+
+                    document.getElementById(
+                        'valorItem'
+                    ).value = '';
+
+
+                    alert(
+                        'Item gravado com sucesso!'
+                    );
+
+
+                    atualizarEstimativaEspaco();
+
+
+                    if (
+                        document.getElementById(
+                            'caixaStorage'
+                        ).style.display ===
+                        'block'
+                    ) {
+
+                        abrirIndexedDB();
+
+                    }
+
+                };
+
+        }
+
+
+        /* =====================================================
+           ABRIR STORAGE
+           ===================================================== */
+
+        function abrirIndexedDB() {
+
+            if (!db) {
+
+                alert(
+                    'O banco de dados ainda está a iniciar. Tente novamente.'
+                );
+
+                return;
+            }
+
+
+            const caixa =
+                document.getElementById(
+                    'caixaStorage'
+                );
+
+
+            document.getElementById(
+                'barraBusca'
+            ).value = '';
+
+
+            const transacao =
+                db.transaction(
+                    [STORE_NAME],
+                    'readonly'
+                );
+
+
+            const store =
+                transacao.objectStore(
+                    STORE_NAME
+                );
+
+
+            const request =
+                store.getAll();
+
+
+            request.onsuccess =
+                function() {
+
+                    todosOsItens =
+                        request.result;
+
+
+                    renderizarLista(
+                        todosOsItens
+                    );
+
+
+                    caixa.style.display =
+                        'block';
+
+                };
+
+        }
+
+
+        /* =====================================================
+           RENDERIZAR LISTA
+           ===================================================== */
+
+        function renderizarLista(
+            itens
+        ) {
+
+            const lista =
+                document.getElementById(
+                    'listaItensStorage'
+                );
+
+
+            lista.innerHTML =
+                '';
+
+
+            if (
+                itens.length === 0
+            ) {
+
+                lista.innerHTML =
+                    '<li>Nenhum dado correspondente encontrado.</li>';
+
+                return;
+            }
+
+
+            itens.forEach(
+                function(item) {
+
+                    const li =
+                        document.createElement(
+                            'li'
+                        );
+
+
+                    const botaoApagarHTML =
+                        isAdmin
+
+                        ? `<button class="btn-delete" onclick="apagarItem(${item.id})">Apagar</button>`
+
+                        : '';
+
+
+                    li.innerHTML = `
+
+                        <span>
+                            <strong>
+                                ${item.nome}
+                            </strong>
+                        </span>
+
+                        <div class="actions-group">
+
+                            <button
+                                class="btn-select"
+                                onclick="usarItem(${item.id})"
+                            >
+                                Usar Este
+                            </button>
+
+                            ${botaoApagarHTML}
+
+                        </div>
+
+                    `;
+
+
+                    lista.appendChild(
+                        li
+                    );
+
+                }
+            );
+
+        }
+
+
+        /* =====================================================
+           FILTRAR
+           ===================================================== */
+
+        function filtrarItens() {
+
+            const termoBusca =
+                document.getElementById(
+                    'barraBusca'
+                ).value.toLowerCase();
+
+
+            const itensFiltrados =
+                todosOsItens.filter(
+                    function(item) {
+
+                        return (
+
+                            item.nome
+                                .toLowerCase()
+                                .includes(
+                                    termoBusca
+                                )
+
+                            ||
+
+                            item.valor
+                                .toLowerCase()
+                                .includes(
+                                    termoBusca
+                                )
+
+                        );
+
+                    }
+                );
+
+
+            renderizarLista(
+                itensFiltrados
+            );
+
+        }
+
+
+        /* =====================================================
+           EXPORTAR JSON
+           ===================================================== */
+
+        function exportarParaJSON() {
+
+            if (!db) {
+
+                alert(
+                    'O banco ainda está a iniciar.'
+                );
+
+                return;
+            }
+
+
+            const transacao =
+                db.transaction(
+                    [STORE_NAME],
+                    'readonly'
+                );
+
+
+            const store =
+                transacao.objectStore(
+                    STORE_NAME
+                );
+
+
+            const request =
+                store.getAll();
+
+
+            request.onsuccess =
+                function() {
+
+                    const dados =
+                        request.result;
+
+
+                    if (
+                        dados.length === 0
+                    ) {
+
+                        alert(
+                            'O banco está vazio! Não há nada para exportar.'
+                        );
+
+                        return;
+                    }
+
+
+                    const jsonString =
+                        JSON.stringify(
+                            dados,
+                            null,
+                            2
+                        );
+
+
+                    const blob =
+                        new Blob(
+                            [jsonString],
+                            {
+                                type:
+                                    'application/json'
+                            }
+                        );
+
+
+                    const url =
+                        URL.createObjectURL(
+                            blob
+                        );
+
+
+                    const linkDownload =
+                        document.createElement(
+                            'a'
+                        );
+
+
+                    linkDownload.href =
+                        url;
+
+
+                    linkDownload.download =
+                        `backup_storage_${Date.now()}.json`;
+
+
+                    document.body.appendChild(
+                        linkDownload
+                    );
+
+
+                    linkDownload.click();
+
+
+                    document.body.removeChild(
+                        linkDownload
+                    );
+
+
+                    URL.revokeObjectURL(
+                        url
+                    );
+
+                };
+
+        }
+
+
+        /* =====================================================
+           APAGAR
+           ===================================================== */
+
+        function apagarItem(
+            idParaApagar
+        ) {
+
+            if (!isAdmin) return;
+
+
+            if (
+                !confirm(
+                    "Tem a certeza que deseja apagar este item permanentemente?"
+                )
+            ) {
+                return;
+            }
+
+
+            const transacao =
+                db.transaction(
+                    [STORE_NAME],
+                    'readwrite'
+                );
+
+
+            const store =
+                transacao.objectStore(
+                    STORE_NAME
+                );
+
+
+            const request =
+                store.delete(
+                    idParaApagar
+                );
+
+
+            request.onsuccess =
+                function() {
+
+                    document.getElementById(
+                        'painelAtivo'
+                    ).style.display =
+                        'none';
+
+
+                    abrirIndexedDB();
+
+
+                    atualizarEstimativaEspaco();
+
+                };
+
+        }
+
+
+        /* =====================================================
+           USAR ITEM
+           ===================================================== */
+
+        function usarItem(
+            idProcurado
+        ) {
+
+            const transacao =
+                db.transaction(
+                    [STORE_NAME],
+                    'readonly'
+                );
+
+
+            const store =
+                transacao.objectStore(
+                    STORE_NAME
+                );
+
+
+            const request =
+                store.get(
+                    idProcurado
+                );
+
+
+            request.onsuccess =
+                function() {
+
+                    const item =
+                        request.result;
+
+
+                    if (item) {
+
+                        document.getElementById(
+                            'viewNome'
+                        ).textContent =
+                            item.nome;
+
+
+                        document.getElementById(
+                            'viewValor'
+                        ).textContent =
+                            item.valor;
+
+
+                        document.getElementById(
+                            'painelAtivo'
+                        ).style.display =
+                            'block';
+
+
+                        document.getElementById(
+                            'painelAtivo'
+                        ).scrollIntoView({
+                            behavior:
+                                'smooth'
+                        });
+
+                    }
+
+                };
+
+        }
+
+
+        /* =====================================================
+           INICIALIZAÇÃO
+           ===================================================== */
+
+        window.addEventListener(
+            'load',
+            function() {
+
+                posicionarLanternaNoCentro();
+
+                inicializarBanco();
+
+            }
+        );
+
+    </script>
+
+</body>
+</html>
