@@ -1,0 +1,387 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel JSON Persistente - Corporativo & Escolar</title>
+    <!-- Biblioteca SheetJS para processar Excel e CSV localmente -->
+   <script src="https://cloudflare.com" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 30px; background: #fafafa; color: #333; }
+        .container { max-width: 650px; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h2 { margin-top: 0; color: #007bff; }
+        input, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 5px; }
+        button:hover { background: #0056b3; }
+        .btn-request { background: #28a745; }
+        .btn-request:hover { background: #218838; }
+        .btn-export { background: #6c757d; }
+        .btn-export:hover { background: #5a6268; }
+        .btn-delete { background: #dc3545; font-size: 12px; padding: 5px 10px; }
+        .btn-delete:hover { background: #bd2130; }
+        .storage-box { display: none; background: #e9ecef; padding: 15px; border-radius: 4px; margin-top: 20px; }
+        ul { list-style: none; padding: 0; }
+        li { background: white; padding: 12px; margin: 8px 0; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .btn-select { background: #17a2b8; font-size: 12px; padding: 5px 10px; }
+        .btn-select:hover { background: #138496; }
+        .active-item { background: #fff3cd; border: 2px solid #ffc107; padding: 15px; border-radius: 4px; margin-top: 20px; }
+        .status-badge { font-size: 12px; padding: 4px 8px; border-radius: 12px; font-weight: bold; display: inline-block; margin-bottom: 10px; }
+        .status-ok { background: #d4edda; color: #155724; }
+        .actions-group { display: flex; gap: 5px; }
+        .search-box { background: #fff; border: 2px solid #007bff; }
+        .admin-lock { border-left: 5px solid #dc3545; }
+        .login-box { background: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+        .file-input-wrapper { background: #f8f9fa; border: 2px dashed #007bff; padding: 15px; text-align: center; border-radius: 6px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- Bloco de Status da Memória -->
+    <div class="container">
+        <h2>Status do Super Storage</h2>
+        <div id="statusPersistencia" class="status-badge">Verificando persistência...</div>
+        <p style="font-size: 12px; margin: 0; color: #666;" id="infoEspaco">Calculando espaço disponível...</p>
+    </div>
+
+    <!-- Modulo de Login (Proteção Administrativa) -->
+    <div class="container login-box" id="blocoLogin">
+        <h3>🔒 Área Administrativa Protegida</h3>
+        <p style="font-size: 13px; margin: 0 0 10px 0;">Insira a senha para desbloquear as funções de escrita, importação e eliminação de dados:</p>
+        <div style="display: flex; gap: 10px;">
+            <input type="password" id="senhaAdmin" placeholder="Digite a palavra-passe administrativo..." style="margin: 0;">
+            <button onclick="verificarSenha()">Autenticar</button>
+        </div>
+        <p id="msgLogin" style="font-size: 12px; font-weight: bold; margin: 5px 0 0 0; color: #dc3545; display: none;">Palavra-passe incorreta!</p>
+    </div>
+
+    <!-- Bloco 1: Inserir dados (Bloqueado por padrão) -->
+    <div class="container admin-lock" id="blocoInsercao" style="opacity: 0.5; pointer-events: none;">
+        <h2>1. Inserir Dados Manuais (Bloqueado)</h2>
+        <input type="text" id="nomeItem" placeholder="Nome do item (ex: Turma 10ºA / Inventário TI)">
+        <input type="text" id="valorItem" placeholder="Conteúdo estruturado ou descrição">
+        <button onclick="salvarNoIndexedDB()">Salvar na Memória Própria</button>
+    </div>
+
+    <!-- Novo Bloco: Importação Avançada Excel e CSV (Bloqueado por padrão) -->
+    <div class="container admin-lock" id="blocoImportacao" style="opacity: 0.5; pointer-events: none;">
+        <h2>2. Importar Tabelas Locais (Bloqueado)</h2>
+        <p style="font-size: 13px; margin: 0;">Carregue ficheiros do Excel (<strong>.xlsx, .xls</strong>) ou ficheiros <strong>.csv</strong>. O sistema vai extrair a primeira coluna como 'Nome' e a segunda coluna como o 'Conteúdo'.</p>
+        <div class="file-input-wrapper">
+            <input type="file" id="arquivoUpload" accept=".xlsx, .xls, .csv" style="margin: 0;">
+            <button class="btn-request" onclick="processarFicheiro()" style="margin-top: 10px;">Processar e Injetar no Banco</button>
+        </div>
+    </div>
+
+    <!-- Bloco de Requisição, Exportação e Busca (Livre para consulta de Alunos/Funcionários) -->
+    <div class="container">
+        <h2>3. Consulta e Requisição Geral</h2>
+        <p>Disponível para qualquer utilizador da rede local pesquisar e carregar dados:</p>
+        <button class="btn-request" onclick="abrirIndexedDB()">Abrir Storage JSON</button>
+        <button class="btn-export" onclick="exportarParaJSON()">Exportar Cópia .json</button>
+
+        <div id="caixaStorage" class="storage-box">
+            <input type="text" id="barraBusca" class="search-box" placeholder="🔍 Digite para filtrar nomes ou dados em tempo real..." oninput="filtrarItens()">
+            <h3>Itens e Registos Disponíveis:</h3>
+            <ul id="listaItensStorage"></ul>
+        </div>
+    </div>
+
+    <!-- Bloco 4: Visualização Ativa -->
+    <div id="painelAtivo" class="container" style="display: none;">
+        <h2>4. Registo Ativo no Sistema</h2>
+        <div class="active-item">
+            <p><strong>Identificação/Nome:</strong> <span id="viewNome"></span></p>
+            <p><strong>Informação / Configuração Base:</strong></p>
+            <pre id="viewValor" style="background: #fff; padding: 10px; border-radius: 4px; overflow-x: auto; max-height: 250px; white-space: pre-wrap;"></pre>
+        </div>
+    </div>
+  <script>
+        const DB_NAME = 'MeuSuperBancoJSON';
+        const STORE_NAME = 'json_store';
+        let db;
+        let todosOsItens = [];
+        let isAdmin = false; // Estado de segurança do utilizador
+
+        // Inicializa o banco de dados IndexedDB
+        function inicializarBanco() {
+            const request = indexedDB.open(DB_NAME, 1);
+            request.onupgradeneeded = function(e) {
+                let database = e.target.result;
+                if (!database.objectStoreNames.contains(STORE_NAME)) {
+                    database.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                }
+            };
+            request.onsuccess = function(e) {
+                db = e.target.result;
+                solicitarPersistenciaMax();
+                atualizarEstimativaEspaco();
+            };
+            request.onerror = function() {
+                console.error("Erro ao abrir banco de alta capacidade.");
+            };
+        }
+
+        // Validação da palavra-passe corporativa
+        function verificarSenha() {
+            const senhaDigitada = document.getElementById('senhaAdmin').value;
+            const msgLogin = document.getElementById('msgLogin');
+            
+            // Senha definida: jesus23
+            if (senhaDigitada === 'jesus23') {
+                isAdmin = true;
+                msgLogin.style.color = '#155724';
+                msgLogin.textContent = '✓ Acesso administrativo concedido!';
+                msgLogin.style.display = 'block';
+                
+                // Desbloqueia as funções administrativas na tela
+                document.getElementById('blocoInsercao').style.opacity = '1';
+                document.getElementById('blocoInsercao').style.pointerEvents = 'auto';
+                
+                document.getElementById('blocoImportacao').style.opacity = '1';
+                document.getElementById('blocoImportacao').style.pointerEvents = 'auto';
+                
+                // Oculta a caixa de login após 1.5 segundos
+                setTimeout(() => {
+                    document.getElementById('blocoLogin').style.display = 'none';
+                }, 1500);
+
+                if (document.getElementById('caixaStorage').style.display === 'block') {
+                    abrirIndexedDB();
+                }
+            } else {
+                isAdmin = false;
+                msgLogin.textContent = 'Palavra-passe incorreta!';
+                msgLogin.style.color = '#dc3545';
+                msgLogin.style.display = 'block';
+            }
+        }
+
+        // Processa ficheiros Excel (.xlsx, .xls) ou .csv localmente
+        function processarFicheiro() {
+            if (!isAdmin) {
+                alert('Ação protegida. Autentique-se primeiro.');
+                return;
+            }
+
+            const inputFicheiro = document.getElementById('arquivoUpload');
+            if (inputFicheiro.files.length === 0) {
+                alert('Por favor, selecione um ficheiro Excel ou CSV primeiro!');
+                return;
+            }
+
+            const ficheiro = inputFicheiro.files[0];
+            const leitor = new FileReader();
+
+            leitor.onload = function(e) {
+                try {
+                    const dadosBinarios = e.target.result;
+                    const livro = XLSX.read(dadosBinarios, { type: 'binary' });
+                    const nomePrimeiraFolha = livro.SheetNames[0];
+                    const folha = livro.Sheets[nomePrimeiraFolha];
+                    
+                    const dadosMatriz = XLSX.utils.sheet_to_json(folha, { header: 1 });
+                    
+                    if (dadosMatriz.length === 0) {
+                        alert('O ficheiro selecionado parece estar vazio.');
+                        return;
+                    }
+
+                    const transacao = db.transaction([STORE_NAME], 'readwrite');
+                    const store = transacao.objectStore(STORE_NAME);
+                    let itensContabilizados = 0;
+
+                    dadosMatriz.forEach((linha) => {
+                        const nome = linha[0];
+                        const valor = linha[1];
+
+                        if (nome && valor) {
+                            const novoItem = {
+                                nome: String(nome).trim(),
+                                valor: String(valor).trim(),
+                                dataCriacao: new Date().toISOString()
+                            };
+                            store.add(novoItem);
+                            itensContabilizados++;
+                        }
+                    });
+
+                    transacao.oncomplete = function() {
+                        alert(`Sucesso! Foram importados ${itensContabilizados} registos diretamente para a memória local.`);
+                        inputFicheiro.value = '';
+                        atualizarEstimativaEspaco();
+                        if (document.getElementById('caixaStorage').style.display === 'block') abrirIndexedDB();
+                    };
+
+                } catch (erro) {
+                    console.error(erro);
+                    alert('Erro ao processar o ficheiro. Certifique-se de que é um formato válido.');
+                }
+            };
+
+            leitor.readAsBinaryString(ficheiro);
+        }
+async function solicitarPersistenciaMax() {
+            const statusDiv = document.getElementById('statusPersistencia');
+            if (navigator.storage && navigator.storage.persist) {
+                const isPersisted = await navigator.storage.persist();
+                if (isPersisted) {
+                    statusDiv.textContent = "✓ MEMÓRIA PERSISTENTE COMPATÍVEL (Protegida contra limpezas)";
+                    statusDiv.className = "status-badge status-ok";
+                } else {
+                    statusDiv.textContent = "⚠ Armazenamento comum (Sujeito a regras do sistema)";
+                    statusDiv.style.background = "#fff3cd";
+                }
+            }
+        }
+
+        async function atualizarEstimativaEspaco() {
+            if (navigator.storage && navigator.storage.estimate) {
+                const estimativa = await navigator.storage.estimate();
+                const totalDisponivelGB = (estimativa.quota / (1024 * 1024 * 1024)).toFixed(2);
+                const usadoMB = (estimativa.usage / (1024 * 1024)).toFixed(2);
+                document.getElementById('infoEspaco').textContent = `Espaço total alocado para você: ~${totalDisponivelGB} GB (Usado: ${usadoMB} MB)`;
+            }
+        }
+
+        function salvarNoIndexedDB() {
+            if (!isAdmin) return;
+            const nome = document.getElementById('nomeItem').value;
+            const valor = document.getElementById('valorItem').value;
+
+            if (!nome || !valor) {
+                alert('Preencha os campos!');
+                return;
+            }
+
+            const transacao = db.transaction([STORE_NAME], 'readwrite');
+            const store = transacao.objectStore(STORE_NAME);
+
+            const novoItem = {
+                nome: nome,
+                valor: valor,
+                dataCriacao: new Date().toISOString()
+            };
+
+            store.add(novoItem);
+
+            transacao.oncomplete = function() {
+                document.getElementById('nomeItem').value = '';
+                document.getElementById('valorItem').value = '';
+                alert('Item gravado com sucesso!');
+                atualizarEstimativaEspaco();
+                if (document.getElementById('caixaStorage').style.display === 'block') abrirIndexedDB();
+            };
+        }
+
+        function abrirIndexedDB() {
+            const caixa = document.getElementById('caixaStorage');
+            document.getElementById('barraBusca').value = '';
+
+            const transacao = db.transaction([STORE_NAME], 'readonly');
+            const store = transacao.objectStore(STORE_NAME);
+            const request = store.getAll();
+
+            request.onsuccess = function() {
+                todosOsItens = request.result;
+                renderizarLista(todosOsItens);
+                caixa.style.display = 'block';
+            };
+        }
+
+        function renderizarLista(itens) {
+            const lista = document.getElementById('listaItensStorage');
+            lista.innerHTML = '';
+
+            if (itens.length === 0) {
+                lista.innerHTML = '<li>Nenhum dado correspondente encontrado.</li>';
+                return;
+            }
+
+            itens.forEach(item => {
+                const li = document.createElement('li');
+                const botaoApagarHTML = isAdmin ? `<button class="btn-delete" onclick="apagarItem(${item.id})">Apagar</button>` : '';
+
+                li.innerHTML = `
+                    <span><strong>${item.nome}</strong></span>
+                    <div class="actions-group">
+                        <button class="btn-select" onclick="usarItem(${item.id})">Usar Este</button>
+                        ${botaoApagarHTML}
+                    </div>
+                `;
+                lista.appendChild(li);
+            });
+        }
+
+        function filtrarItens() {
+            const termoBusca = document.getElementById('barraBusca').value.toLowerCase();
+            const itensFiltrados = todosOsItens.filter(item => 
+                item.nome.toLowerCase().includes(termoBusca) || 
+                item.valor.toLowerCase().includes(termoBusca)
+            );
+            renderizarLista(itensFiltrados);
+        }
+
+        function exportarParaJSON() {
+            const transacao = db.transaction([STORE_NAME], 'readonly');
+            const store = transacao.objectStore(STORE_NAME);
+            const request = store.getAll();
+
+            request.onsuccess = function() {
+                const dados = request.result;
+                if (dados.length === 0) {
+                    alert('O banco está vazio! Não há nada para exportar.');
+                    return;
+                }
+
+                const jsonString = JSON.stringify(dados, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                const linkDownload = document.createElement('a');
+                linkDownload.href = url;
+                linkDownload.download = `backup_storage_${Date.now()}.json`;
+                
+                document.body.appendChild(linkDownload);
+                linkDownload.click();
+                
+                document.body.removeChild(linkDownload);
+                URL.revokeObjectURL(url);
+            };
+        }
+
+        function apagarItem(idParaApagar) {
+            if (!isAdmin) return;
+            if (!confirm("Tem a certeza que deseja apagar este item permanentemente?")) return;
+
+            const transacao = db.transaction([STORE_NAME], 'readwrite');
+            const store = transacao.objectStore(STORE_NAME);
+            const request = store.delete(idParaApagar);
+
+            request.onsuccess = function() {
+                document.getElementById('painelAtivo').style.display = 'none';
+                abrirIndexedDB();
+                atualizarEstimativaEspaco();
+            };
+        }
+
+        function usarItem(idProcurado) {
+            const transacao = db.transaction([STORE_NAME], 'readonly');
+            const store = transacao.objectStore(STORE_NAME);
+            const request = store.get(idProcurado);
+
+            request.onsuccess = function() {
+                const item = request.result;
+                if (item) {
+                    document.getElementById('viewNome').textContent = item.nome;
+                    document.getElementById('viewValor').textContent = item.valor;
+                    document.getElementById('painelAtivo').style.display = 'block';
+                    document.getElementById('painelAtivo').scrollIntoView({ behavior: 'smooth' });
+                }
+            };
+        }
+
+        window.onload = inicializarBanco;
+    </script>
+</body>
+</html>
