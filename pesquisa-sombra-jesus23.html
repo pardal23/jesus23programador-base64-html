@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pesquisa Universal Avançada</title>
+    <style>
+        /* Ambiente Sombra: Fundo escuro e místico */
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle at center, #140026 0%, #03000a 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* Espírito em Movimento: Aura fluida constante ao fundo */
+        .aura {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(138, 43, 226, 0.15) 0%, transparent 70%);
+            animation: flutuar 8s infinite alternate ease-in-out;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        @keyframes flutuar {
+            0% { transform: translate(-30px, -30px) scale(1); }
+            100% { transform: translate(30px, 30px) scale(1.15); }
+        }
+
+        /* Contentor de Pesquisa Principal */
+        .search-container {
+            position: relative;
+            background: rgba(10, 5, 20, 0.85);
+            padding: 40px;
+            border-radius: 24px;
+            border: 1px solid rgba(138, 43, 226, 0.3);
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.9), 0 0 30px rgba(138, 43, 226, 0.2);
+            backdrop-filter: blur(12px);
+            z-index: 2;
+            width: 460px;
+            text-align: center;
+            /* Transição otimizada para aceleração gráfica */
+            transition: transform 1.2s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.6s ease;
+            will-change: transform, opacity;
+        }
+
+        /* 210 graus inclinados para a esquerda (-210deg) */
+        .search-container.spirited-rotation {
+            transform: rotate(-210deg) scale(0.4);
+            opacity: 0;
+        }
+
+        h1 {
+            color: #ebd9ff;
+            font-size: 1.6rem;
+            margin-bottom: 25px;
+            letter-spacing: 3px;
+            text-shadow: 0 0 12px rgba(138, 43, 226, 0.6);
+        }
+
+        /* Estrutura do Formulário e Input */
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="search"] {
+            width: 100%;
+            padding: 16px 140px 16px 24px; /* Espaço generoso à direita para o botão */
+            background: rgba(255, 255, 255, 0.04);
+            border: 2px solid rgba(138, 43, 226, 0.4);
+            border-radius: 50px;
+            color: #fff;
+            font-size: 1.1rem;
+            outline: none;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        input[type="search"]:focus {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: #a045ff;
+            box-shadow: 0 0 20px rgba(160, 69, 255, 0.4);
+        }
+
+        /* Botão de Disparo */
+        button {
+            position: absolute;
+            right: 6px;
+            background: linear-gradient(45deg, #6a00ff, #a045ff);
+            border: none;
+            color: white;
+            padding: 11px 26px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            box-shadow: 0 0 15px #a045ff;
+            transform: scale(1.03);
+        }
+
+        .status-msg {
+            margin-top: 20px;
+            color: #8c7fa6;
+            font-size: 0.85rem;
+            min-height: 20px;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Espírito em Movimento (Fundo) -->
+    <div class="aura"></div>
+
+    <!-- Ambiente Sombra (Painel Central) -->
+    <div class="search-container" id="portalPesquisa">
+        <h1>CONEXÃO UNIVERSAL</h1>
+        
+        <!-- Método nativo híbrido com Google para evitar bloqueios do browser -->
+        <form id="searchForm" action="https://google.com" method="get" target="_blank" onsubmit="iniciarEfeitoEspiritual(event)">
+            <div class="search-box">
+                <input type="search" name="q" id="query" placeholder="Procurar no cosmos web..." required autocomplete="off">
+                <button type="submit">Procurar</button>
+            </div>
+        </form>
+        
+        <div class="status-msg" id="statusMsg"></div>
+    </div>
+
+    <script>
+        function iniciarEfeitoEspiritual(event) {
+            // 1. Intercetamos o envio por um momento para correr a animação
+            event.preventDefault();
+            
+            const formulario = document.getElementById('searchForm');
+            const painel = document.getElementById('portalPesquisa');
+            const status = document.getElementById('statusMsg');
+
+            status.innerText = "A invocar a teia global...";
+
+            // 2. Dispara a rotação de 210 graus para a esquerda (-210deg)
+            painel.classList.add('spirited-rotation');
+
+            // 3. Aguarda 600ms (tempo ideal do efeito visual) e liberta a pesquisa real
+            setTimeout(() => {
+                formulario.submit();
+
+                // 4. Restaura o portal de forma invisível para novas pesquisas
+                setTimeout(() => {
+                    painel.classList.remove('spirited-rotation');
+                    status.innerText = "";
+                    document.getElementById('query').value = "";
+                }, 1000);
+
+            }, 600); 
+        }
+    </script>
+</body>
+</html>
